@@ -11,31 +11,60 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
 
+interface User {
+  name: string,
+  photo: string,
+  uid: string,
+}
 
-const getUserByEmail = (email: string) => {
+const parseUserRecord = (userRecord: UserRecord): User => {
+  console.log(userRecord);
+  const {displayName, photoURL, uid} = userRecord;
+  if (displayName && photoURL && uid) {
+    return {
+      name: displayName,
+      photo: photoURL,
+      uid: uid,
+    };
+  }
+  return {name: "", photo: "", uid: ""};
+};
+const getUserByEmail = (target: string): Promise<User> => {
   return new Promise((res, rej) => {
-    admin.auth().getUserByEmail(email)
+    admin.auth().getUserByEmail(target)
         .then((userRecord : UserRecord ) => {
-          console.log(userRecord);
-          res({
-            name: userRecord.displayName,
-            email: userRecord.email,
-            photo: userRecord.photoURL,
-          });
+          res(parseUserRecord(userRecord));
         })
         .catch(rej);
   });
 };
 
+
+const getUserByUid = (target: string): Promise<User> => {
+  return new Promise((res, rej) => {
+    // console.log(`getUserByUid target: ${target}`)
+    admin.auth().getUser(target)
+        .then((userRecord : UserRecord ) => {
+          res(parseUserRecord(userRecord));
+        })
+        .catch(rej);
+  });
+};
 exports.users = functions.https.onRequest(async (req, res) => {
   res.set("Access-Control-Allow-Origin", "*");
   if (req.method === "GET") {
     try {
-      const email : string = req.query.email as string;
-      const result = await getUserByEmail(email);
+      const email : string | undefined = req.query.email as string | undefined;
+      const uid : string | undefined = req.query.uid as string | undefined;
+      let result = {};
+      if (email) {
+        result = await getUserByEmail(email);
+      } else if (uid) {
+        result = await getUserByUid(uid);
+      }
       res.json(result);
     } catch (e) {
-      //console.log(e.errorInfo);
+      // console.log(e.errorInfo);
       switch (e.errorInfo.code) {
         case "auth/invalid-email": {
           res.status(400).send({error: "Invalid Email"});
