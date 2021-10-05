@@ -1,6 +1,9 @@
 functions/key
 functions/lib
 
+# hide for now
+firestore.rules
+
 # Logs
 logs
 *.log
