@@ -5,10 +5,10 @@ import * as admin from "firebase-admin";
 
 // a trigger
 export const onSharedTransactionChange = functions.firestore
-    .document("shared/{groupId}/transactions/{transactionId}")
+    .document("shared/{groupId}")
     .onCreate(async (snap) : Promise<void> => {
       console.log("onCreate Triggered");
-      console.log("Got new shared transaction at id: "+snap.id);
+      console.log("Got new shared transaction group at: "+snap.id);
 
       const memberMap: {[id: string]: boolean} = snap.data().memberMap;
       try {
