@@ -10,41 +10,35 @@ interface User {
   name: string,
   photo: string,
   uid: string,
+  email?: string,
 }
 
 const parseUserRecord = (userRecord: UserRecord): User => {
-  // console.log(userRecord);
-  const {displayName, photoURL, uid} = userRecord;
-  if (displayName && photoURL && uid) {
-    return {
-      name: displayName,
-      photo: photoURL,
-      uid: uid,
-    };
+  if (userRecord.providerData?.length > 0) {
+    const providerData = userRecord.providerData[0] as admin.auth.UserInfo;
+    const {displayName, photoURL, email} = providerData;
+    if (displayName && photoURL && userRecord.uid) {
+      return {
+        name: displayName,
+        photo: photoURL,
+        uid: userRecord.uid,
+        email,
+      };
+    }
   }
+
   return {name: "", photo: "", uid: ""};
 };
 
 const getUserByEmail = (target: string): Promise<User> => {
-  return new Promise((res, rej) => {
-    admin.auth().getUserByEmail(target)
-        .then((userRecord : UserRecord ) => {
-          res(parseUserRecord(userRecord));
-        })
-        .catch(rej);
-  });
+  return admin.auth().getUserByEmail(target)
+      .then( parseUserRecord );
 };
 
 
 const getUserByUid = (target: string): Promise<User> => {
-  return new Promise((res, rej) => {
-    // console.log(`getUserByUid target: ${target}`)
-    admin.auth().getUser(target)
-        .then((userRecord : UserRecord ) => {
-          res(parseUserRecord(userRecord));
-        })
-        .catch(rej);
-  });
+  return admin.auth().getUser(target)
+      .then( parseUserRecord );
 };
 
 // http endpoint
